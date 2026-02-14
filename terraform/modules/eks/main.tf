@@ -222,18 +222,8 @@ resource "kubernetes_config_map_v1" "aws_auth" {
     ])
   }
 
-  lifecycle {
-    ignore_changes = [
-      metadata[0].resource_version,
-    ]
-  }
-
   depends_on = [
     aws_eks_cluster.project_bedrock_cluster,
-    # aws_eks_node_group.main,
-    # aws_eks_addon.vpc_cni,
-    # aws_eks_addon.coredns,
-    # aws_eks_addon.kube_proxy,
   ]
 }
 

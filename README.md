@@ -20,47 +20,30 @@ Success looks like: A fully automated infrastructure pipeline, a running applica
 
 ### Phase 1: Infrastructure Deployment
 
-Run the deployment script below to setup remote state and application infrastructure
+- Clone the repo to your local machine
 
-```bash
-chmod 740 script/*
+  ```bash
+  git clone https://github.com/PhilipOyelegbin/barakat-2025-capstone.git
 
-./script/deploy-infra.sh
-```
+  cd barakat-2025-capstone
+  ```
+
+- Run the deployment script below to setup remote state and application infrastructure
+
+  ```bash
+  chmod 740 script/*
+
+  ./script/deploy-infra.sh
+  ```
 
 ### Phase 2: Application Deployment
 
-Run the command below to deploy the application using helm
+- Run the command below to deploy the application using helm
 
-```bash
-aws eks --region us-east-1 update-kubeconfig --name project-bedrock-cluster
-kubectl get nodes
+  ```bash
+  ./script/deploy-app.sh
+  ```
 
-# Add required Helm repositories
-helm repo add eks https://aws.github.io/eks-charts
-helm repo add aws-containers https://aws-containers.github.io/retail-store-sample-app
-helm repo update
-
-# Install AWS Load Balancer Controller
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-  --namespace kube-system \
-  --set clusterName=project-bedrock-cluster \
-  --set serviceAccount.create=true \
-  --set serviceAccount.name=aws-load-balancer-controller \
-  --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=arn:aws:iam::YOUR_ACCOUNT_ID:role/project-bedrock-cluster-alb-controller-role \
-  --set region=us-east-1 \
-  --set vpcId=vpc-12345678
-
-# Verify ALB controller is running
-kubectl get pods -n kube-system | grep aws-load-balancer-controller
-
-# Install retail store app
-helm install retail-store-app aws-containers/retail-store-sample-app \
-  --namespace retail-app \
-  --create-namespace
-
-# Verify the app is running
-kubectl get all -n retail-app
-```
+> On successful deployment, open your browser and navigate to: http://localhost:8080
 
 ---
