@@ -46,4 +46,3 @@ output "resource_details" {
 #     echo "Installation complete!"
 #   EOT
 # }
-
