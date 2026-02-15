@@ -55,7 +55,7 @@ variable "terraform_role_arn" {
 variable "node_instance_types" {
   description = "List of EC2 instance types for EKS nodes"
   type        = list(string)
-  default     = ["t3.micro"]
+  default     = ["t3.medium"]
 }
 
 variable "desired_size" {
@@ -67,7 +67,7 @@ variable "desired_size" {
 variable "min_size" {
   description = "Minimum number of worker nodes"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "max_size" {

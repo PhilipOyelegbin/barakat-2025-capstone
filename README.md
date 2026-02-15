@@ -41,7 +41,7 @@ Success looks like: A fully automated infrastructure pipeline, a running applica
 - Run the command below to deploy the application using helm
 
   ```bash
-  ./script/deploy-app.sh
+  ./script/deploy-app.sh <AWS_ACCESS_KEY_ID> <AWS_SECRET_ACCESS_KEY> <AWS_REGION>
   ```
 
 > On successful deployment, open your browser and navigate to: http://localhost:8080

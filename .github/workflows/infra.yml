@@ -58,20 +58,11 @@ jobs:
         working-directory: ./terraform
 
       - name: Plan Terraform and save plan to file
-        run: terraform plan -out=tfplan.binary
+        run: terraform plan
         working-directory: ./terraform
-
-      - name: Upload files to artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan
-          path: ./terraform/tfplan.binary
-          retention-days: 1
 
   apply:
     runs-on: ubuntu-latest
-    needs:
-      - plan
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
@@ -93,45 +84,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Download files from artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-plan
-          path: ./terraform
-
       - name: Initialize Terraform
         run: terraform init
         working-directory: ./terraform
 
       - name: Apply Terraform plan
-        run: terraform apply -auto-approve tfplan.binary
+        run: terraform apply -auto-approve
         working-directory: ./terraform
-
-      # - name: Extract Outputs
-      #   id: tf_outputs
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GH_PAT }}
-      #   run: |
-      #     # Use -json to safely parse complex values
-      #     terraform output -json > tf-outputs.json
-
-      #     # Extract values from tf-outputs.json
-      #     SERVER_IP=$(jq -r '.resource_details.value.asg_public_ips[0]' tf-outputs.json)
-      #     REDIS_ADDR=$(jq -r '.resource_details.value.redis_endpoint' tf-outputs.json)
-      #     LB_DNS="http://$(jq -r '.resource_details.value.load_balancer_dns' tf-outputs.json)"
-      #     S3_BUCKET=$(jq -r '.resource_details.value.s3_bucket' tf-outputs.json)
-      #     LOG_BUCKET=$(jq -r '.resource_details.value.alb_log_bucket' tf-outputs.json)
-      #     CLOUDFRONT_ID=$(jq -r '.resource_details.value.cloudfront_id' tf-outputs.json)
-
-      #     # Persist as Repository Secrets
-      #     gh secret set SERVER_HOST --body "$SERVER_IP"
-      #     gh secret set REDIS_ADDR --body "$REDIS_ADDR"
-      #     gh secret set VITE_API_BASE_URL --body "$LB_DNS"
-      #     gh secret set BUCKET_NAME --body "$S3_BUCKET"
-      #     gh secret set LOG_BUCKET_NAME --body "$LOG_BUCKET"
-      #     gh secret set CLOUDFRONT_ID --body "$CLOUDFRONT_ID"
-      #   working-directory: ./terraform
-      #   shell: bash
 
       # - name: Send Slack Notification
       #   if: always()
@@ -177,7 +136,7 @@ jobs:
           EOF
 
       - name: Destroy deployed apps
-        run: bash destroy-app.sh
+        run: ./destroy-app.sh
         working-directory: ./scripts
 
       - name: Initialize Terraform

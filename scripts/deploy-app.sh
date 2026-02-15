@@ -1,6 +1,14 @@
 #!/bin/bash
 
-# set -e
+if [ $# -lt 3 ]; then
+  echo "Usage: $0 <AWS_ACCESS_KEY_ID> <AWS_SECRET_ACCESS_KEY> <AWS_REGION>"
+  exit 1
+fi
+
+# Argument Variables
+AWS_ACCESS_KEY_ID=$1
+AWS_SECRET_ACCESS_KEY=$2
+AWS_REGION=$3
 
 echo "Deploying Retail Store Sample Application..."
 
@@ -19,15 +27,20 @@ helm install catalog oci://public.ecr.aws/aws-containers/retail-store-sample-cat
 --set database.name=catalogdb \
 --set database.user=catalog_user \
 --set database.password=catalog_password \
+--set mysql.database=catalogdb \
+--set mysql.rootPassword=root_password \
 --wait
 
-# Deploy cart service with Redis for session management
+# Deploy cart service with DynamoDB
 helm install cart oci://public.ecr.aws/aws-containers/retail-store-sample-cart-chart \
 --version 1.2.1 \
 --namespace retail-app \
---set redis.enabled=true \
---set redis.host=cart-redis \
---set redis.port=6379 \
+--set dynamodb.enabled=true \
+--set dynamodb.tableName=cart-items-table \
+--set dynamodb.region=$AWS_REGION \
+--set dynamodb.accessKeyId=$AWS_ACCESS_KEY_ID \
+--set dynamodb.secretAccessKey=$AWS_SECRET_ACCESS_KEY \
+--set dynamodb.endpoint=https://dynamodb.$AWS_REGION.amazonaws.com \
 --wait
 
 # Deploy orders service with PostgreSQL
@@ -41,13 +54,13 @@ helm install orders oci://public.ecr.aws/aws-containers/retail-store-sample-orde
 --set postgresql.password=orders_password \
 --wait
 
-# Deploy checkout service (orchestrates the checkout process)
+# Deploy checkout service with Redis for session management
 helm install checkout oci://public.ecr.aws/aws-containers/retail-store-sample-checkout-chart \
 --version 1.2.1 \
 --namespace retail-app \
---set cartService.host=cart \
---set catalogService.host=catalog \
---set ordersService.host=orders \
+--set redis.enabled=true \
+--set redis.host=cart-redis \
+--set redis.port=6379 \
 --wait
 
 # Deploy UI service - the frontend application
@@ -58,6 +71,9 @@ helm install ui oci://public.ecr.aws/aws-containers/retail-store-sample-ui-chart
 --set cartService.host=cart \
 --set ordersService.host=orders \
 --set checkoutService.host=checkout \
+--set service.type=LoadBalancer \
+--set service.port=80 \
+--set service.targetPort=80 \
 --wait
 
 echo "Application deployment initiated..."
@@ -90,8 +106,3 @@ echo "Listing all deployed resources:"
 kubectl get all -n retail-app
 
 echo "Application deployed successfully!"
-
-# Port-forward to access the UI locally
-echo "To access the application, use port-forward:"
-echo "kubectl port-forward svc/ui-service -n retail-app 8080:80"
-kubectl port-forward -n retail-app svc/ui 8080:80
