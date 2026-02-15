@@ -41,6 +41,7 @@ module "eks_iam" {
   source       = "./modules/iam"
   project_name = var.project_name
   project_tag  = var.project_tag
+  region       = var.aws_region
 }
 
 # Provision vpc infrastructure via Network module
@@ -64,8 +65,9 @@ module "kubernetes" {
   terraform_role_arn   = var.terraform_role_arn
 }
 
-module "storage" {
-  source       = "./modules/storage"
+module "serverless" {
+  source       = "./modules/serverless"
   project_name = var.project_name
   project_tag  = var.project_tag
+  lambda_role_arn = module.eks_iam.iam_roles.lambda_role_arn
 }

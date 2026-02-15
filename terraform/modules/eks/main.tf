@@ -186,15 +186,18 @@ resource "aws_eks_addon" "kube_proxy" {
 }
 
 # CloudWatch Observability Addon
-# resource "aws_eks_addon" "cloudwatch_observability" {
-#   cluster_name  = aws_eks_cluster.project_bedrock_cluster.name
-#   addon_name    = "amazon-cloudwatch-observability"
+resource "aws_eks_addon" "cloudwatch_observability" {
+  cluster_name                = aws_eks_cluster.project_bedrock_cluster.name
+  addon_name                  = "amazon-cloudwatch-observability"
+  service_account_role_arn    = aws_iam_role.cloudwatch_observability_role.arn
+  resolve_conflicts_on_create = "OVERWRITE"
 
-#   depends_on = [
-#     aws_eks_cluster.project_bedrock_cluster,
-#     aws_eks_addon.kube_proxy,
-#   ]
-# }
+  depends_on = [
+    aws_iam_role.cloudwatch_observability_role,
+    aws_eks_cluster.project_bedrock_cluster,
+    aws_eks_addon.kube_proxy,
+  ]
+}
 
 #============================================ Kubernetes Resources ============================================#
 # AWS Auth ConfigMap
@@ -279,6 +282,77 @@ resource "aws_iam_openid_connect_provider" "eks" {
     Name    = "project-${var.project_name}-oidc-provider"
     Project = var.project_tag
   }
+}
+
+#============================================ Custom Least-Privilege Policies for Node Groups ============================================#
+# CloudWatch policy for observability addon
+resource "aws_iam_policy" "cloudwatch_observability_policy" {
+  name        = "project-${var.project_name}-cloudwatch-observability-policy"
+  description = "Policy for CloudWatch Observability addon"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
+          "logs:PutRetentionPolicy"
+        ]
+        Resource = [
+          "arn:aws:logs:*:*:log-group:/aws/eks/project-${var.project_name}-cluster/*",
+          "arn:aws:logs:*:*:log-group:/aws/containerinsights/project-${var.project_name}-cluster/*",
+          "arn:aws:logs:*:*:log-group:*:*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricData",
+          "cloudwatch:ListMetrics"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = {
+    Name    = "project-bedrock-cloudwatch-observability-policy"
+    Project = "barakat-2025-capstone"
+  }
+}
+
+resource "aws_iam_role" "cloudwatch_observability_role" {
+  name = "project-${var.project_name}-cloudwatch-observability-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.eks.arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "${replace(aws_eks_cluster.project_bedrock_cluster.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:amazon-cloudwatch:cloudwatch-agent"
+          }
+        }
+      }
+    ]
+  })
+}
+
+# Attach to node role
+resource "aws_iam_role_policy_attachment" "cloudwatch_observability_policy_attachment" {
+  role       = aws_iam_role.cloudwatch_observability_role.name
+  policy_arn = aws_iam_policy.cloudwatch_observability_policy.arn
 }
 
 #============================================ LB Controller IAM Role ============================================
