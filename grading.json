@@ -1,0 +1,22 @@
+{
+  "resource_details": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "assets_bucket": "string",
+        "eks_name": "string",
+        "eks_url": "string",
+        "vpc_id": "string",
+        "vpc_region": "string"
+      }
+    ],
+    "value": {
+      "assets_bucket": "bedrock-assets-altsoe0251574",
+      "eks_name": "project-bedrock-cluster",
+      "eks_url": "https://9FD5090253551BE9B24AD24CBC23E930.gr7.us-east-1.eks.amazonaws.com",
+      "vpc_id": "vpc-0dbecb829c950a8ba",
+      "vpc_region": "us-east-1"
+    }
+  }
+}
