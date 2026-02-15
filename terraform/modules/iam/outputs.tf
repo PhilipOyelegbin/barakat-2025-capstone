@@ -8,5 +8,7 @@ output "iam_roles" {
     developer_access_key_id     = aws_iam_access_key.bedrock_dev_view_key.id
     developer_secret_access_key = aws_iam_access_key.bedrock_dev_view_key.secret
     developer_iam_user_name     = aws_iam_user.bedrock_dev_view.name
+    lambda_role_arn             = aws_iam_role.lambda_exec_role.arn
   }
+  sensitive = true
 }

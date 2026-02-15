@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# set -e
-
 # Uninstall all Helm releases
 echo "Uninstalling Retail Store Sample Application..."
 aws eks --region us-east-1 update-kubeconfig --name project-bedrock-cluster
