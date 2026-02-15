@@ -1,0 +1,4 @@
+project_name       = "bedrock"
+project_tag        = "barakat-2025-capstone"
+aws_region         = "us-east-1"
+terraform_role_arn = "arn:aws:iam::<ID>:user/<NAME>" # Update with your IAM user ARN
